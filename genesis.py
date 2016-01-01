@@ -24,7 +24,13 @@ class Genesis():
 		path = '%s/%s-%s.txt' % (os.path.dirname(os.path.realpath(__file__)), source, str(datetime.now()))
 		with open(path, 'w') as f:
 			for url, sentence in tuples:
-				f.write('%s\n%s\n\n'.encode('utf-8') % (url, sentence))
+				try:
+					# can't use % interpolation due to unicode issues. % will automatically use the str() function
+					f.write('{}\n{}\n\n'.format(url, sentence))
+				except Exception, e:
+					print 'EXPORT ERROR!', e
+					print 'URL:', url
+					print 'SENTENCE:', sentence
 
 	# medium articles
 	def medium(self):
@@ -39,25 +45,35 @@ class Genesis():
 			soup = BeautifulSoup(requests.get(url).text)
 
 			try:
-				for i in xrange(2):
-					first_block = soup.select('div.section-inner p')[i].text.encode('utf-8')
-					first_sentence = re.match(self.first_sentence_regex, first_block).group(0).strip()
+				first_block = soup.select('div.section-inner p')[0].text.encode('utf-8')
+				first_sentence = re.match(self.first_sentence_regex, first_block).group(0).strip()
 			except Exception, e:
-				if i == 1:
+				try:
+					first_block = soup.select('div.section-inner p')[1].text.encode('utf-8')
+					first_sentence = re.match(self.first_sentence_regex, first_block).group(0).strip()
+				except Exception, e:
 					print 'REGEX ERROR!'
 					print 'First block:', first_block
-					if raw_input('>') == 'n':
+					flag = raw_input('> ')
+					if flag == 'n':
+						first_sentence = 'REGEX ERROR'
+					elif flag == 's':
 						continue
 					else:
 						exit(1)
-				else:
-					pass
 
 			print '%s\n' % first_sentence
 			sentences.append((url, first_sentence))
 
 		print 'Finished processing!'
 		self.__export(sentences, 'medium')
+
+	def debug_export(self):
+		url = 'https://m.signalvnoise.com/30280c7d5e44'
+		first_block = BeautifulSoup(requests.get(url).text).select('div.section-inner p')[0].text.encode('utf-8')
+		first_sentence = re.match(self.first_sentence_regex, first_block).group(0).strip()
+		with open('test.txt', 'w') as f:
+			f.write(first_sentence)
 
 	def __insert_test(self):
 		self.col.insert(
@@ -70,3 +86,4 @@ class Genesis():
 if __name__ == '__main__':
 	g = Genesis()
 	g.medium()
+	# g.debug_export()

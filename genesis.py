@@ -52,15 +52,21 @@ class Genesis():
 					first_block = soup.select('div.section-inner p')[1].text.encode('utf-8')
 					first_sentence = re.match(self.first_sentence_regex, first_block).group(0).strip()
 				except Exception, e:
-					print 'REGEX ERROR!'
+					print 'REGEX ERROR'
 					print 'First block:', first_block
 					flag = raw_input('> ')
 					if flag == 'n':
 						first_sentence = 'REGEX ERROR'
+					elif flag == 'b':
+						first_sentence = first_block
 					elif flag == 's':
 						continue
 					else:
 						exit(1)
+
+			# hacky robustness; all sentences should have at least an ending punctuation
+			if len(first_sentence) <= 1:
+				first_sentence = 'REGEX ERROR'
 
 			print '%s\n' % first_sentence
 			sentences.append((url, first_sentence))
@@ -86,4 +92,3 @@ class Genesis():
 if __name__ == '__main__':
 	g = Genesis()
 	g.medium()
-	# g.debug_export()
